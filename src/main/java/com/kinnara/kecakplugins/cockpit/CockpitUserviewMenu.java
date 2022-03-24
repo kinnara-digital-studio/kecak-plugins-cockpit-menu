@@ -100,7 +100,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 .map(m -> m.get("menuId"))
                 .map(Try.onFunction(this::getUserviewMenu))
                 .filter(m -> !(m instanceof CockpitUserviewMenu))
-                .collect(Collectors.toMap(menu -> menu.getProperty("id").toString(), Try.onFunction(menu -> {
+                .collect(Collectors.toMap(Try.onFunction(menu -> menu.getProperty("id").toString()), Try.onFunction(menu -> {
                     final Map<String, Object> value = new HashMap<>();
 
                     final String renderPage = Optional.of(menu)
@@ -108,8 +108,10 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                             .map(String::trim)
                             .filter(s -> !s.isEmpty())
                             .orElseGet(menu::getRenderPage);
+
                     value.put("renderPage", renderPage);
                     value.put("properties", menu.getProperties());
+
                     return value;
                 })));
 
@@ -131,7 +133,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 .map(UserviewCategory::getMenus)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .filter(menu -> menuId.equals(Optional.of(menu).map(m -> m.getPropertyString("customId")).orElse(menu.getPropertyString("id"))))
+                .filter(menu -> menuId.equals(Optional.ofNullable(menu.getPropertyString("customId")).orElse(menu.getPropertyString("id"))))
                 .findFirst()
                 .orElseThrow(() -> new CockpitException("Error generating userview menu [" + menuId + "]"));
     }
