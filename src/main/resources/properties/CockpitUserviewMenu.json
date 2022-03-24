@@ -1,0 +1,37 @@
+[
+  {
+    "title": "Cockpit",
+    "properties": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "hidden"
+      },
+      {
+        "name": "customId",
+        "label": "Custom ID",
+        "type": "textfield",
+        "regex_validation": "^[a-zA-Z0-9_]+$",
+        "validation_message": "Invalid ID"
+      },
+      {
+        "name": "label",
+        "label": "Label",
+        "type": "textfield",
+        "required": "true"
+      },
+      {
+        "name": "menus",
+        "label": "Menus",
+        "type": "grid",
+        "columns": [
+          {
+            "key": "menuId",
+            "label": "Menu",
+            "required": "true"
+          }
+        ]
+      }
+    ]
+  }
+]
