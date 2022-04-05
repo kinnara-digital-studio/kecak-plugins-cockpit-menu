@@ -37,15 +37,15 @@
             "value": "full",
             "options": [
               {
-                "value": "full",
+                "value": "col-xs-12",
                 "label": "Full"
               },
               {
-                "value": "half",
+                "value": "col-xs-12 col-lg-6",
                 "label": "Half"
               },
               {
-                "value": "oneThird",
+                "value": "col-xs-12 col-sm-4",
                 "label": "One-Third"
               }
             ]
