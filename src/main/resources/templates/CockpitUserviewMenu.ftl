@@ -8,13 +8,12 @@
             </small>
         </h1>
     </div>
-    <#list renderedMenus as item>
-        <#assign title = item['properties']['label'] >
-        <#assign renderPage = item['renderPage'] >
-        <#assign columnSize = item['columnSize'] >
-
-        <div class="row">
-            <div class="col-sm-12">
+    <div class="row">
+        <#list renderedMenus as item>
+            <#assign title = item['properties']['label'] >
+            <#assign renderPage = item['renderPage'] >
+            <#assign columnSize = item['columnSize'] >
+            <div class="${columnSize!}">
                 <div class="widget-box transparent">
                     <div class="widget-header widget-header-flat">
                         <h4 class="widget-title lighter"> ${title!} </h4>
@@ -31,7 +30,7 @@
                     </div>
                 </div>
             </div>
-        </div>
         <div class="hr hr32 hr-dotted"></div>
-    </#list>
+        </#list>
+    </div>
 </div>
