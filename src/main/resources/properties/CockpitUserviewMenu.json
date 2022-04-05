@@ -29,6 +29,26 @@
             "key": "menuId",
             "label": "Menu",
             "required": "true"
+          },
+          {
+            "key": "columnSize",
+            "label": "Size",
+            "required": "true",
+            "value": "full",
+            "options": [
+              {
+                "value": "full",
+                "label": "Full"
+              },
+              {
+                "value": "half",
+                "label": "Half"
+              },
+              {
+                "value": "oneThird",
+                "label": "One-Third"
+              }
+            ]
           }
         ]
       }
