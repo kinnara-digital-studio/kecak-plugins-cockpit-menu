@@ -11,6 +11,8 @@
     <#list renderedMenus as item>
         <#assign title = item['properties']['label'] >
         <#assign renderPage = item['renderPage'] >
+        <#assign columnSize = item['columnSize'] >
+
         <div class="row">
             <div class="col-sm-12">
                 <div class="widget-box transparent">

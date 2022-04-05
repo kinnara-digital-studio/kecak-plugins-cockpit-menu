@@ -148,29 +148,35 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 .map(Arrays::stream)
                 .orElseGet(Stream::empty)
                 .map(o -> (Map<String, String>) o)
-                .map(m -> m.get("menuId"))
-                .map(this::getUserviewMenu)
+                .map(map -> Optional.of(map)
+                        .map(m -> m.getOrDefault("menuId", ""))
+                        .filter(s -> !s.isEmpty())
+                        .map(this::getUserviewMenu)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .filter(m -> !(m instanceof CockpitUserviewMenu))
+                        .map(Try.onFunction(menu -> {
+                            final Map<String, Object> value = new HashMap<>();
+
+                            final String renderPage = Optional.of(menu)
+                                    .map(UserviewUtil::getUserviewMenuHtml)
+                                    .map(String::trim)
+                                    .filter(s -> !s.isEmpty())
+                                    .orElseGet(menu::getRenderPage);
+
+                            value.put("renderPage", renderPage);
+                            value.put("properties", menu.getProperties());
+                            value.put("columnSize", map.getOrDefault("columnSize", "full"));
+
+                            return value;
+                        })))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .filter(m -> !(m instanceof CockpitUserviewMenu))
-                .map(Try.onFunction(menu -> {
-                    final Map<String, Object> value = new HashMap<>();
-
-                    final String renderPage = Optional.of(menu)
-                            .map(UserviewUtil::getUserviewMenuHtml)
-                            .map(String::trim)
-                            .filter(s -> !s.isEmpty())
-                            .orElseGet(menu::getRenderPage);
-
-                    value.put("renderPage", renderPage);
-                    value.put("properties", menu.getProperties());
-
-                    return value;
-                }))
                 .collect(Collectors.toList());
 
         final Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("renderedMenus", renderedMenus);
+        dataModel.put("element", this);
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), templatePath, null);
     }
 
