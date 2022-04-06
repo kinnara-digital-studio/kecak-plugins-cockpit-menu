@@ -30,7 +30,8 @@
                     </div>
                 </div>
             </div>
-        <div class="hr hr32 hr-dotted"></div>
+
         </#list>
     </div>
+     <div class="clearfix"></div>
 </div>
