@@ -4,6 +4,7 @@ import com.kinnara.kecakplugins.cockpit.commons.Utilities;
 import com.kinnara.kecakplugins.cockpit.exception.CockpitException;
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;
+import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.lib.DataListMenu;
 import org.joget.apps.userview.lib.FormMenu;
@@ -94,6 +95,8 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+
         try {
             final String userviewId = getParameter(request, PARAM_USERVIEW_ID);
             final String menuId = getParameter(request, PARAM_MENU_ID);
@@ -107,24 +110,31 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                     .map(s -> Utilities.getUserviewMenu(userview, s))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .map(Try.onFunction(m -> {
+                    .map(Try.onFunction(menu -> {
                         final JSONObject json = new JSONObject();
-                        final CockpitItemType type;
+
                         final JSONObject jsonProperties = new JSONObject();
-                        if (m instanceof FormMenu) {
+
+                        final CockpitItemType type;
+                        if (isForm(menu)) {
                             type = CockpitItemType.FORM;
-                            jsonProperties.put("formId", m.getPropertyString("formId"));
-                        } else if (m instanceof DataListMenu || m instanceof InboxMenu ||
-                        "com.kinnara.kecakplugins.crudmenu.CrudMenu".equals(m.getClassName())) {
+                            jsonProperties.put("formId", menu.getPropertyString("formId"));
+                        } else if (isDataList(menu)) {
                             type = CockpitItemType.DATALIST;
-                            jsonProperties.put("dataListId", m.getPropertyString("datalistId"));
+                            jsonProperties.put("dataListId", menu.getPropertyString("datalistId"));
+                        } else if (isNative(menu)) {
+                            type = CockpitItemType.NATIVE;
                         } else {
                             type = CockpitItemType.WEBVIEW;
                         }
 
+                        request.setAttribute("embed", true);
+
                         json.put("type", type.name());
-                        json.put("className", m.getClassName());
+                        json.put("className", menu.getClassName());
                         json.put("properties", jsonProperties);
+                        json.put("url", request.getContextPath() + "/embed/mobile/" + appDefinition.getAppId() + "/" + userviewId + "/_/" + menuId);
+                        json.put("content", getInternalRenderPage(menu));
 
                         return json;
                     }))
@@ -157,14 +167,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                         .filter(m -> !(m instanceof CockpitUserviewMenu))
                         .map(Try.onFunction(menu -> {
                             final Map<String, Object> value = new HashMap<>();
-
-                            final String renderPage = Optional.of(menu)
-                                    .map(UserviewUtil::getUserviewMenuHtml)
-                                    .map(String::trim)
-                                    .filter(s -> !s.isEmpty())
-                                    .orElseGet(menu::getRenderPage);
-
-                            value.put("renderPage", renderPage);
+                            value.put("renderPage", getInternalRenderPage(menu));
                             value.put("properties", menu.getProperties());
                             value.put("columnSize", map.getOrDefault("columnSize", "full"));
 
@@ -206,6 +209,35 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 .orElseThrow(() -> new ApiException(HttpServletResponse.SC_BAD_REQUEST, "Parameter [" + parameterName + "] is not supplied"));
     }
 
+    protected boolean isForm(UserviewMenu menu) {
+        return menu instanceof FormMenu;
+    }
+
+    protected boolean isDataList(UserviewMenu menu) {
+        return menu instanceof DataListMenu
+                || menu instanceof InboxMenu
+                || menu.getClassName().equals("com.kinnara.kecakplugins.datalistinboxmenu.DataListInboxMenu")
+                || menu.getClassName().equals("com.kinnara.kecakplugins.crudmenu.CrudMenu");
+    }
+
+    protected boolean isNative(UserviewMenu menu) {
+        final String menuClassName = menu.getClassName();
+        return menu instanceof FormMenu
+                || menu instanceof DataListMenu
+                || menu instanceof InboxMenu
+                || menuClassName.equals("com.kinnara.kecakplugins.datalistinboxmenu.DataListInboxMenu")
+                || menuClassName.equals("com.kinnara.kecakplugins.crudmenu.CrudMenu")
+                || menuClassName.equals("com.kinnara.kecakplugins.DashboardWidget");
+    }
+
+    protected String getInternalRenderPage(UserviewMenu menu) {
+        return Optional.of(menu)
+                .map(UserviewUtil::getUserviewMenuHtml)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .orElseGet(menu::getRenderPage);
+    }
+
     public String[] getPropertyMenus() {
         return Optional.of("menus")
                 .map(this::getProperty)
@@ -225,6 +257,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
     public enum CockpitItemType {
         WEBVIEW,
         DATALIST,
-        FORM
+        FORM,
+        NATIVE
     }
 }
