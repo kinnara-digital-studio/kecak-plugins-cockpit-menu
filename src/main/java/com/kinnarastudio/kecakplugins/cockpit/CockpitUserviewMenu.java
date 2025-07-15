@@ -1,14 +1,15 @@
 package com.kinnarastudio.kecakplugins.cockpit;
 
-import com.kinnarastudio.kecakplugins.cockpit.commons.Utilities;
-import com.kinnarastudio.kecakplugins.cockpit.exception.CockpitException;
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;
+import com.kinnarastudio.kecakplugins.cockpit.commons.Utilities;
+import com.kinnarastudio.kecakplugins.cockpit.exception.CockpitException;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.lib.DataListMenu;
 import org.joget.apps.userview.lib.FormMenu;
 import org.joget.apps.userview.lib.InboxMenu;
+import org.joget.apps.userview.lib.RunProcess;
 import org.joget.apps.userview.model.Userview;
 import org.joget.apps.userview.model.UserviewCategory;
 import org.joget.apps.userview.model.UserviewMenu;
@@ -41,7 +42,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
 
     @Override
     public String getIcon() {
-        return "/plugin/org.joget.apps.userview.lib.RunProcess/images/grid_icon.gif";
+        return "/plugin/" + RunProcess.class.getName() + "/images/grid_icon.gif";
     }
 
     @Override
@@ -110,7 +111,10 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                     .filter(m -> m instanceof CockpitUserviewMenu)
                     .orElseThrow(() -> new ApiException(HttpServletResponse.SC_NOT_FOUND, "Menu [" + menuId + "] is not found"));
 
-            final JSONArray jsonResponse = Arrays.stream(cockpitMenu.getPropertyMenus())
+            final JSONArray jsonResponse = Optional.of(cockpitMenu)
+                    .map(CockpitUserviewMenu::getPropertyMenus)
+                    .stream()
+                    .flatMap(Arrays::stream)
                     .map(s -> Utilities.getUserviewMenu(userview, s))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
@@ -230,8 +234,11 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 || menu instanceof DataListMenu
                 || menu instanceof InboxMenu
                 || menuClassName.equals("com.kinnara.kecakplugins.datalistinboxmenu.DataListInboxMenu")
+                || menuClassName.equals("com.kinnarastudio.kecakplugins.datalistinboxmenu.DataListInboxMenu")
                 || menuClassName.equals("com.kinnara.kecakplugins.crudmenu.CrudMenu")
-                || menuClassName.equals("com.kinnara.kecakplugins.DashboardWidget");
+                || menuClassName.equals("com.kinnarastudio.kecakplugins.crudmenu.CrudMenu")
+                || menuClassName.equals("com.kinnara.kecakplugins.DashboardWidget")
+                || menuClassName.equals("com.kinnarastudio.kecakplugins.DashboardWidget");
     }
 
     protected String getInternalRenderPage(UserviewMenu menu) {
@@ -246,8 +253,8 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
         return Optional.of("menus")
                 .map(this::getProperty)
                 .map(o -> (Object[]) o)
-                .map(Arrays::stream)
-                .orElseGet(Stream::empty)
+                .stream()
+                .flatMap(Arrays::stream)
                 .map(o -> (Map<String, String>) o)
                 .map(m -> m.get("menuId"))
                 .filter(Objects::nonNull)
