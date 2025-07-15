@@ -79,7 +79,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
 
     @Override
     public String getDescription() {
-        return getClass().getName();
+        return getClass().getPackage().getImplementationTitle();
     }
 
     @Override
