@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.cockpit;
+package com.kinnarastudio.kecakplugins.cockpit.form;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.model.Element;

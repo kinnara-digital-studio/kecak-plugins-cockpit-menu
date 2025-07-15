@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.cockpit;
+package com.kinnarastudio.kecakplugins.cockpit.userview;
 
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;

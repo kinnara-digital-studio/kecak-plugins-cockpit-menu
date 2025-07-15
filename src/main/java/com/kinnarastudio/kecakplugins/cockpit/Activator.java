@@ -2,6 +2,8 @@ package com.kinnarastudio.kecakplugins.cockpit;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import com.kinnarastudio.kecakplugins.cockpit.userview.CockpitUserviewMenu;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
