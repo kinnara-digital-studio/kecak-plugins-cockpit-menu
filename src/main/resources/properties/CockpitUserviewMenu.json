@@ -27,7 +27,7 @@
         "columns": [
           {
             "key": "menuId",
-            "label": "Menu",
+            "label": "Menu Custom ID",
             "required": "true"
           },
           {
