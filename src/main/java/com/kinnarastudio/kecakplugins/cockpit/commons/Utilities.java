@@ -1,6 +1,6 @@
-package com.kinnara.kecakplugins.cockpit.commons;
+package com.kinnarastudio.kecakplugins.cockpit.commons;
 
-import com.kinnara.kecakplugins.cockpit.exception.CockpitException;
+import com.kinnarastudio.kecakplugins.cockpit.exception.CockpitException;
 import org.joget.apps.app.dao.UserviewDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.UserviewDefinition;

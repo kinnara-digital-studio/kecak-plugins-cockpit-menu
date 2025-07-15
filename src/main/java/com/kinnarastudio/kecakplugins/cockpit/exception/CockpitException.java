@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.cockpit.exception;
+package com.kinnarastudio.kecakplugins.cockpit.exception;
 
 public class CockpitException extends Exception {
     CockpitException(Throwable cause) {

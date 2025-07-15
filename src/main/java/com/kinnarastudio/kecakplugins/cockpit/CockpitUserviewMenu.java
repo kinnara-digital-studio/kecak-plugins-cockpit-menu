@@ -1,7 +1,7 @@
-package com.kinnara.kecakplugins.cockpit;
+package com.kinnarastudio.kecakplugins.cockpit;
 
-import com.kinnara.kecakplugins.cockpit.commons.Utilities;
-import com.kinnara.kecakplugins.cockpit.exception.CockpitException;
+import com.kinnarastudio.kecakplugins.cockpit.commons.Utilities;
+import com.kinnarastudio.kecakplugins.cockpit.exception.CockpitException;
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;
 import org.joget.apps.app.model.AppDefinition;
@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSupport {
     public final static String PARAM_USERVIEW_ID = "_userview";
     public final static String PARAM_MENU_ID = "_menu";
+    public final static String LABEL = "Cockpit";
 
     @Override
     public String getCategory() {
@@ -65,12 +66,15 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
 
     @Override
     public String getName() {
-        return getLabel();
+        return LABEL;
     }
 
     @Override
     public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        ResourceBundle resourceBundle = pluginManager.getPluginMessageBundle(getClassName(), "/messages/BuildNumber");
+        String buildNumber = resourceBundle.getString("buildNumber");
+        return buildNumber;
     }
 
     @Override
@@ -80,7 +84,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
 
     @Override
     public String getLabel() {
-        return "Cockpit";
+        return LABEL;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.cockpit;
+package com.kinnarastudio.kecakplugins.cockpit;
 
 import java.util.ArrayList;
 import java.util.Collection;
