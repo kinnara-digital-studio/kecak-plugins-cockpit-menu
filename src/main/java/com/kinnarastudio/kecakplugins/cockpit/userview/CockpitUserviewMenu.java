@@ -27,8 +27,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.function.Predicate.*;
 
 public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSupport {
     public final static String PARAM_USERVIEW_ID = "_userview";
@@ -163,31 +166,31 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
         final PluginManager pluginManager = (PluginManager) applicationContext.getBean("pluginManager");
         final Object[] menus = (Object[]) getProperty("menus");
         final List<Map<String, Object>> renderedMenus = Optional.ofNullable(menus)
-                .map(Arrays::stream)
-                .orElseGet(Stream::empty)
+                .stream()
+                .flatMap(Arrays::stream)
                 .map(o -> (Map<String, String>) o)
                 .map(map -> Optional.of(map)
+                        .filter(not(Map::isEmpty))
                         .map(m -> m.getOrDefault("menuId", ""))
-                        .filter(s -> !s.isEmpty())
+                        .filter(not(String::isEmpty))
                         .map(this::getUserviewMenu)
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .filter(m -> !(m instanceof CockpitUserviewMenu))
-                        .map(Try.onFunction(menu -> {
-                            final Map<String, Object> value = new HashMap<>();
-                            value.put("renderPage", getInternalRenderPage(menu));
-                            value.put("properties", menu.getProperties());
-                            value.put("columnSize", map.getOrDefault("columnSize", "full"));
-
-                            return value;
-                        })))
+                        .map(Try.onFunction(menu -> (Map<String, Object>) new HashMap<String, Object>() {{
+                            put("renderPage", getInternalRenderPage(menu));
+                            put("properties", menu.getProperties());
+                            put("columnSize", map.getOrDefault("columnSize", "full"));
+                        }})))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        final Map<String, Object> dataModel = new HashMap<>();
-        dataModel.put("renderedMenus", renderedMenus);
-        dataModel.put("element", this);
+        final Map<String, Object> dataModel = new HashMap<>() {{
+            put("renderedMenus", renderedMenus);
+            put("element", CockpitUserviewMenu.this);
+        }};
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), templatePath, null);
     }
 
@@ -260,7 +263,6 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 .filter(Objects::nonNull)
                 .toArray(String[]::new);
     }
-
 
     /**
      * Cockpit Item Type
