@@ -2,9 +2,12 @@ package com.kinnarastudio.kecakplugins.cockpit.userview;
 
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;
+import com.kinnarastudio.commons.jsonstream.JSONStream;
 import com.kinnarastudio.kecakplugins.cockpit.commons.Utilities;
 import com.kinnarastudio.kecakplugins.cockpit.exception.CockpitException;
+import org.joget.apps.app.dao.UserviewDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
+import org.joget.apps.app.model.UserviewDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.lib.DataListMenu;
 import org.joget.apps.userview.lib.FormMenu;
@@ -13,6 +16,7 @@ import org.joget.apps.userview.lib.RunProcess;
 import org.joget.apps.userview.model.Userview;
 import org.joget.apps.userview.model.UserviewCategory;
 import org.joget.apps.userview.model.UserviewMenu;
+import org.joget.apps.userview.service.UserviewService;
 import org.joget.apps.userview.service.UserviewUtil;
 import org.joget.commons.util.LogUtil;
 import org.joget.plugin.base.PluginManager;
@@ -27,11 +31,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static java.util.function.Predicate.*;
+import static java.util.function.Predicate.not;
+import static org.joget.apps.userview.model.Userview.USERVIEW_KEY_EMPTY_VALUE;
 
 public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSupport {
     public final static String PARAM_USERVIEW_ID = "_userview";
@@ -192,6 +195,38 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
         }};
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), templatePath, null);
+    }
+
+    @Override
+    public void setUserview(Userview originalUserview) {
+        AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+        if (appDef == null) {
+            super.setUserview(originalUserview);
+            return;
+        }
+
+        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
+        UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
+        String userviewId = originalUserview.getPropertyString("id");
+        UserviewDefinition userviewDef = userviewDefinitionDao.loadById(userviewId, appDef);
+
+        JSONObject manipulatedJson = Optional.ofNullable(userviewDef)
+                .map(UserviewDefinition::getJson)
+                .map(Try.onFunction(JSONObject::new))
+                .orElseGet(JSONObject::new);
+
+        Optional.of(manipulatedJson)
+                .map(Try.onFunction(j -> j.getJSONArray("categories")))
+                .stream()
+                .flatMap(j -> JSONStream.of(j, Try.onBiFunction(JSONArray::getJSONObject)))
+                .map(Try.onFunction(j -> j.getJSONObject("properties")))
+                .forEach(Try.onConsumer(j -> j.put("hide", "")));
+
+        Map<String, Object> reqParams = originalUserview.getParams();
+        String contextPath = String.valueOf(originalUserview.getParam("contextPath"));
+        Userview manipulatedUserview = userviewService.createUserview(appDef, manipulatedJson.toString(), null, false, contextPath, reqParams, USERVIEW_KEY_EMPTY_VALUE, true);
+        super.setUserview(manipulatedUserview);
     }
 
     /**
