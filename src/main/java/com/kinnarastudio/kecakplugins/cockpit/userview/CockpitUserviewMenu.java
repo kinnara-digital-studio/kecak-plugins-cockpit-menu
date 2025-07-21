@@ -38,9 +38,12 @@ import static java.util.function.Predicate.not;
 import static org.joget.apps.userview.model.Userview.USERVIEW_KEY_EMPTY_VALUE;
 
 public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSupport {
+
     public final static String PARAM_USERVIEW_ID = "_userview";
     public final static String PARAM_MENU_ID = "_menu";
     public final static String LABEL = "Cockpit";
+
+    private Userview userview;
 
     @Override
     public String getCategory() {
@@ -174,26 +177,30 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                 .flatMap(Arrays::stream)
                 .map(o -> (Map<String, String>) o)
                 .map(map -> Optional.of(map)
-                        .filter(not(Map::isEmpty))
-                        .map(m -> m.getOrDefault("menuId", ""))
-                        .filter(not(String::isEmpty))
-                        .map(this::getUserviewMenu)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .filter(m -> !(m instanceof CockpitUserviewMenu))
-                        .map(Try.onFunction(menu -> (Map<String, Object>) new HashMap<String, Object>() {{
-                            put("renderPage", getInternalRenderPage(menu));
-                            put("properties", menu.getProperties());
-                            put("columnSize", map.getOrDefault("columnSize", "full"));
-                        }})))
+                .filter(not(Map::isEmpty))
+                .map(m -> m.getOrDefault("menuId", ""))
+                .filter(not(String::isEmpty))
+                .map(this::getUserviewMenu)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(m -> !(m instanceof CockpitUserviewMenu))
+                .map(Try.onFunction(menu -> (Map<String, Object>) new HashMap<String, Object>() {
+            {
+                put("renderPage", getInternalRenderPage(menu));
+                put("properties", menu.getProperties());
+                put("columnSize", map.getOrDefault("columnSize", "full"));
+            }
+        })))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        final Map<String, Object> dataModel = new HashMap<>() {{
-            put("renderedMenus", renderedMenus);
-            put("element", CockpitUserviewMenu.this);
-        }};
+        final Map<String, Object> dataModel = new HashMap<>() {
+            {
+                put("renderedMenus", renderedMenus);
+                put("element", CockpitUserviewMenu.this);
+            }
+        };
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), templatePath, null);
     }
@@ -235,28 +242,32 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
      * @return
      */
     public final Optional<UserviewMenu> getUserviewMenu(String menuId) {
-        String userviewId = getUserview().getPropertyString("id");
-        AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
-        ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
-        UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
-        UserviewDefinition userviewDef = userviewDefinitionDao.loadById(userviewId, appDefinition);
+        if (userview == null) {
+            LogUtil.info(getClassName(), "getUserMenuId: " + menuId);
+            String userviewId = getUserview().getPropertyString("id");
+            AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+            ApplicationContext applicationContext = AppUtil.getApplicationContext();
+            UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
+            UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
+            UserviewDefinition userviewDef = userviewDefinitionDao.loadById(userviewId, appDefinition);
 
-        JSONObject json = Optional.ofNullable(userviewDef)
-                .map(UserviewDefinition::getJson)
-                .map(Try.onFunction(JSONObject::new))
-                .orElseGet(JSONObject::new);
+            JSONObject json = Optional.ofNullable(userviewDef)
+                    .map(UserviewDefinition::getJson)
+                    .map(Try.onFunction(JSONObject::new))
+                    .orElseGet(JSONObject::new);
 
-        Optional.of(json)
-                .map(Try.onFunction(j -> j.getJSONArray("categories")))
-                .stream()
-                .flatMap(j -> JSONStream.of(j, Try.onBiFunction(JSONArray::getJSONObject)))
-                .map(Try.onFunction(j -> j.getJSONObject("properties")))
-                .forEach(Try.onConsumer(j -> j.put("hide", "")));
+            Optional.of(json)
+                    .map(Try.onFunction(j -> j.getJSONArray("categories")))
+                    .stream()
+                    .flatMap(j -> JSONStream.of(j, Try.onBiFunction(JSONArray::getJSONObject)))
+                    .map(Try.onFunction(j -> j.getJSONObject("properties")))
+                    .forEach(Try.onConsumer(j -> j.put("hide", "")));
 
-        HttpServletRequest request = WorkflowUtil.getHttpServletRequest();
-        String contextPath = request.getContextPath();
-        Userview userview = userviewService.createUserview(json.toString(), menuId, false, contextPath, null, USERVIEW_KEY_EMPTY_VALUE, true);
+            HttpServletRequest request = WorkflowUtil.getHttpServletRequest();
+            String contextPath = request.getContextPath();
+
+            userview = userviewService.createUserview(json.toString(), null, false, contextPath, null, USERVIEW_KEY_EMPTY_VALUE, true);
+        }
 
         return Optional.ofNullable(userview)
                 .map(Userview::getCategories)
