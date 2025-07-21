@@ -21,6 +21,7 @@ import org.joget.apps.userview.service.UserviewUtil;
 import org.joget.commons.util.LogUtil;
 import org.joget.plugin.base.PluginManager;
 import org.joget.plugin.base.PluginWebSupport;
+import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.kecak.apps.exception.ApiException;
@@ -196,51 +197,74 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), templatePath, null);
     }
-
-    @Override
-    public void setUserview(Userview originalUserview) {
-        AppDefinition appDef = AppUtil.getCurrentAppDefinition();
-        if (appDef == null) {
-            super.setUserview(originalUserview);
-            return;
-        }
-
-        ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
-        UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
-        String userviewId = originalUserview.getPropertyString("id");
-        UserviewDefinition userviewDef = userviewDefinitionDao.loadById(userviewId, appDef);
-
-        JSONObject manipulatedJson = Optional.ofNullable(userviewDef)
-                .map(UserviewDefinition::getJson)
-                .map(Try.onFunction(JSONObject::new))
-                .orElseGet(JSONObject::new);
-
-        Optional.of(manipulatedJson)
-                .map(Try.onFunction(j -> j.getJSONArray("categories")))
-                .stream()
-                .flatMap(j -> JSONStream.of(j, Try.onBiFunction(JSONArray::getJSONObject)))
-                .map(Try.onFunction(j -> j.getJSONObject("properties")))
-                .forEach(Try.onConsumer(j -> j.put("hide", "")));
-
-        Map<String, Object> reqParams = originalUserview.getParams();
-        String contextPath = String.valueOf(originalUserview.getParam("contextPath"));
-        Userview manipulatedUserview = userviewService.createUserview(appDef, manipulatedJson.toString(), null, false, contextPath, reqParams, USERVIEW_KEY_EMPTY_VALUE, true);
-        super.setUserview(manipulatedUserview);
-    }
+//
+//    @Override
+//    public void setUserview(Userview originalUserview) {
+//        AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+//        if (appDef == null) {
+//            super.setUserview(originalUserview);
+//            return;
+//        }
+//
+//        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+//        UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
+//        UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
+//        String userviewId = originalUserview.getPropertyString("id");
+//        UserviewDefinition userviewDef = userviewDefinitionDao.loadById(userviewId, appDef);
+//
+//        JSONObject manipulatedJson = Optional.ofNullable(userviewDef)
+//                .map(UserviewDefinition::getJson)
+//                .map(Try.onFunction(JSONObject::new))
+//                .orElseGet(JSONObject::new);
+//
+//        Optional.of(manipulatedJson)
+//                .map(Try.onFunction(j -> j.getJSONArray("categories")))
+//                .stream()
+//                .flatMap(j -> JSONStream.of(j, Try.onBiFunction(JSONArray::getJSONObject)))
+//                .map(Try.onFunction(j -> j.getJSONObject("properties")))
+//                .forEach(Try.onConsumer(j -> j.put("hide", "")));
+//
+//        Map<String, Object> reqParams = originalUserview.getParams();
+//        String contextPath = String.valueOf(originalUserview.getParam("contextPath"));
+//        Userview manipulatedUserview = userviewService.createUserview(appDef, manipulatedJson.toString(), null, false, contextPath, reqParams, USERVIEW_KEY_EMPTY_VALUE, true);
+//        super.setUserview(manipulatedUserview);
+//    }
 
     /**
      * @param menuId
      * @return
      */
     public final Optional<UserviewMenu> getUserviewMenu(String menuId) {
-        final Userview userview = getUserview();
-        return userview.getCategories()
+        String userviewId = getUserview().getPropertyString("id");
+        AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        UserviewService userviewService = (UserviewService) applicationContext.getBean("userviewService");
+        UserviewDefinitionDao userviewDefinitionDao = (UserviewDefinitionDao) applicationContext.getBean("userviewDefinitionDao");
+        UserviewDefinition userviewDef = userviewDefinitionDao.loadById(userviewId, appDefinition);
+
+        JSONObject json = Optional.ofNullable(userviewDef)
+                .map(UserviewDefinition::getJson)
+                .map(Try.onFunction(JSONObject::new))
+                .orElseGet(JSONObject::new);
+
+        Optional.of(json)
+                .map(Try.onFunction(j -> j.getJSONArray("categories")))
                 .stream()
-                .map(UserviewCategory::getMenus)
-                .filter(Objects::nonNull)
+                .flatMap(j -> JSONStream.of(j, Try.onBiFunction(JSONArray::getJSONObject)))
+                .map(Try.onFunction(j -> j.getJSONObject("properties")))
+                .forEach(Try.onConsumer(j -> j.put("hide", "")));
+
+        HttpServletRequest request = WorkflowUtil.getHttpServletRequest();
+        String contextPath = request.getContextPath();
+        Userview userview = userviewService.createUserview(json.toString(), menuId, false, contextPath, null, USERVIEW_KEY_EMPTY_VALUE, true);
+
+        return Optional.ofNullable(userview)
+                .map(Userview::getCategories)
+                .stream()
                 .flatMap(Collection::stream)
-                .filter(menu -> menuId.equals(Optional.ofNullable(menu.getPropertyString("customId")).orElse(menu.getPropertyString("id"))))
+                .map(UserviewCategory::getMenus)
+                .flatMap(Collection::stream)
+                .filter(m -> menuId.equals(m.getPropertyString("customId")))
                 .findFirst();
     }
 
