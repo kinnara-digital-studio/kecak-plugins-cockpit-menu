@@ -1,11 +1,21 @@
+<head>
+    <style>
+        .widget-body {
+            max-height: 128rem;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .widget-body.collapsed {
+            max-height: 0;
+        }
+    </style>
+</head>
+<body>
 <div class="page-content">
     <div class="page-header">
         <h1>
             Testing
-            <small>
-                <i class="ace-icon fa fa-angle-double-right"></i>
-                overview & stats
-            </small>
         </h1>
     </div>
     <div class="row">
@@ -35,3 +45,46 @@
     </div>
      <div class="clearfix"></div>
 </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-action="collapse"]').forEach(function (toggle) {
+                toggle.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const icon = this.querySelector('i');
+                    const widgetBox = this.closest('.widget-box');
+                    const widgetBody = widgetBox.querySelector('.widget-body');
+
+                    const isCollapsed = widgetBody.classList.contains('collapsed');
+
+                    if (isCollapsed) {
+                        // Expand: set to scrollHeight for smooth open
+                        widgetBody.classList.remove('collapsed');
+                        const scrollHeight = widgetBody.scrollHeight;
+                        widgetBody.style.maxHeight = scrollHeight + 'px';
+
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-up');
+
+                        // Reset max-height after animation
+                        setTimeout(() => {
+                            widgetBody.style.maxHeight = '';
+                        }, 400);
+                    } else {
+                        // Collapse: set to current height then animate to 0
+                        const currentHeight = widgetBody.scrollHeight;
+                        widgetBody.style.maxHeight = currentHeight + 'px';
+                        // allow repaint
+                        requestAnimationFrame(() => {
+                            widgetBody.style.maxHeight = '0px';
+                            widgetBody.classList.add('collapsed');
+                        });
+
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-chevron-down');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
