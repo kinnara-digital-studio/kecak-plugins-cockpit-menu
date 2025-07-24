@@ -13,11 +13,11 @@
 </head>
 <body>
 <div class="page-content">
-    <div class="page-header">
-        <h1>
-            Testing
-        </h1>
-    </div>
+    <#if (element.properties.showLabel!"") == "true" >
+        <div class="page-header">
+            <h1>${element.properties.label!}</h1>
+        </div>
+    </#if>
     <div class="row">
         <#list renderedMenus as item>
             <#assign title = item['properties']['label'] >

@@ -21,6 +21,18 @@
         "required": "true"
       },
       {
+        "name": "showLabel",
+        "label": "Show Label",
+        "type": "checkbox",
+        "value": "",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      },
+      {
         "name": "menus",
         "label": "Menus",
         "type": "grid",
