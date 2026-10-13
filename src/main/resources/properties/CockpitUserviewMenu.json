@@ -61,6 +61,10 @@
                 "label": "One-Third"
               }
             ]
+          },
+          {
+            "key": "customLabel",
+            "label": "Custom Label"
           }
         ]
       }

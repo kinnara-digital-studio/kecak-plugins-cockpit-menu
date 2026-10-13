@@ -20,7 +20,12 @@
     </#if>
     <div class="row">
         <#list renderedMenus as item>
-            <#assign title = item['properties']['label'] >
+            <#assign customLabel = (item['customLabel']!'')?trim >
+            <#if customLabel?has_content>
+                <#assign title = customLabel >
+            <#else>
+                <#assign title = item['properties']['label']! >
+            </#if>
             <#assign renderPage = item['renderPage'] >
             <#assign columnSize = item['columnSize'] >
             <div class="${columnSize!}">

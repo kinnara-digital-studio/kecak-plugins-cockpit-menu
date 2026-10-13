@@ -189,6 +189,7 @@ public class CockpitUserviewMenu extends UserviewMenu implements PluginWebSuppor
                                 put("renderPage", getInternalRenderPage(menu));
                                 put("properties", menu.getProperties());
                                 put("columnSize", map.getOrDefault("columnSize", "full"));
+                                put("customLabel", map.getOrDefault("customLabel", ""));
                             }
                         })))
                 .filter(Optional::isPresent)
