@@ -59,6 +59,14 @@
               {
                 "value": "col-xs-12 col-sm-4",
                 "label": "One-Third"
+              },
+              {
+                "value": "col-xs-12 col-sm-3",
+                "label": "One-Fourth"
+              },
+              {
+                "value": "col-xs-12 col-sm-2",
+                "label": "One-Sixth"
               }
             ]
           },
